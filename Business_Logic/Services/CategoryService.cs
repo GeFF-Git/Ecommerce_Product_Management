@@ -15,14 +15,17 @@ namespace Application_Layer.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IConfigurationProvider _configurationProvider;
 
         public CategoryService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _configurationProvider = _mapper.ConfigurationProvider;
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync() => _mapper.Map<IEnumerable<CategoryDto>>(await _unitOfWork.Categories.GetAllWithAttributesAsync());
+
         //public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
         //{
         //    var categories = await _unitOfWork.Categories.GetAllAsync();
@@ -79,7 +82,7 @@ namespace Application_Layer.Services
         public async Task<CategoryAttributeDto> AddAttributeToCategoryAsync(int categoryId, CreateCategoryAttributeDto attributeDto)
         {
             if (await _unitOfWork.Categories.GetByIdAsync(categoryId) == null) throw new InvalidOperationException("Category not found.");
-            var newAttribute = _mapper.Map<CategoryAttribute>(attributeDto);
+            var newAttribute = _mapper.Map<Infrastructure_Layer.CategoryAttribute>(attributeDto);
             newAttribute.CategoryId = categoryId;
 
             // The following line is fixed: removed the incorrect curly braces and object initializer syntax.

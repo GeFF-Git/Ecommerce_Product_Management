@@ -11,6 +11,7 @@ namespace Domain_Layer.Interfaces
         ICategoryRepository Categories { get; }
         IProductRepository Products { get; }
         ICategoryAttributeRepository CategoryAttributes { get; }
+        IProductAttributeRepository ProductAttributes { get; }
 
         // Commits all changes made within a transaction to the database.
         Task<int> CompleteAsync();

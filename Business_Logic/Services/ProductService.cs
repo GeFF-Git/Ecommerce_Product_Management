@@ -14,16 +14,26 @@ namespace Application_Layer.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly ICategoryService _categoryService;
-
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, ICategoryService categoryService)
+        private readonly IConfigurationProvider _configurationProvider;
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _categoryService = categoryService;
+            _configurationProvider = _mapper.ConfigurationProvider;
         }
 
-        public async Task<IEnumerable<ProductDto>> GetAllProductsAsync() => _mapper.Map<IEnumerable<ProductDto>>(await _unitOfWork.Products.GetAllAsync());
+        public async Task<IEnumerable<ProductDto>> GetAllProductsAsync() 
+        {
+            var product = await _unitOfWork.Products.GetAllWithDetailsAsync();
+            return _mapper.Map<IEnumerable<ProductDto>>(product); 
+        }
+        //public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
+        //{
+        //    // This is more optimized than loading full entities first.
+        //    return await _unitOfWork.Products.GetAllQueryable() // Assumes you add a method that returns IQueryable
+        //        .ProjectTo<ProductDto>(_configurationProvider)
+        //        .ToListAsync();
+        //}
         public async Task<ProductDto?> GetProductByIdAsync(int id) => _mapper.Map<ProductDto>(await _unitOfWork.Products.GetProductWithDetailsAsync(id));
 
         public async Task<IEnumerable<Product>> GetAllProductsAsyncWithModel()
@@ -61,7 +71,7 @@ namespace Application_Layer.Services
             return _mapper.Map<ProductDto>(createdProduct);
         }
 
-        public async Task<bool> UpdateProductAsync(int id, Product productDto)
+        public async Task<bool> UpdateProductAsync(int id, ProductDto productDto)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(id);
             if (product == null) return false;
@@ -88,15 +98,16 @@ namespace Application_Layer.Services
         }
 
         // New method implementation for adding/updating a product's attribute value
-        public async Task<ProductAttribute> AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto)
+        public async Task<ProductAttributeValueDto> AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto)
         {
-            var product = await _unitOfWork.Products.GetProductWithDetailsAsync(productId);
+            // *** THIS IS THE CORRECTED LOGIC ***
+            // 1. Use the new repository method to get the product AND its attributes for tracking.
+            var product = await _unitOfWork.Products.GetProductWithAttributesForUpdateAsync(productId);
             if (product == null)
             {
                 throw new InvalidOperationException("Product not found.");
             }
 
-            // Check if the attribute already has a value for this product
             var existingAttribute = product.ProductAttributes
                 .FirstOrDefault(pa => pa.AttributeId == attributeDto.AttributeId);
 
@@ -108,16 +119,47 @@ namespace Application_Layer.Services
             }
             else
             {
-                // Add new attribute value
+                // Add new attribute value to the TRACKED collection
                 var newAttributeValue = _mapper.Map<Infrastructure_Layer.ProductAttribute>(attributeDto);
                 product.ProductAttributes.Add(newAttributeValue);
             }
 
+            // 2. Now, when you save, EF Core knows about the added/updated item and will save it correctly.
             await _unitOfWork.CompleteAsync();
 
-            // Map the result back to a DTO to return
-            var updatedAttribute = product.ProductAttributes.First(pa => pa.AttributeId == attributeDto.AttributeId);
-            return _mapper.Map<ProductAttribute>(updatedAttribute);
+            // 3. Reload to get all details for the response DTO.
+            var reloadedProduct = await _unitOfWork.Products.GetProductWithDetailsAsync(productId);
+            var updatedAttribute = reloadedProduct.ProductAttributes.First(pa => pa.AttributeId == attributeDto.AttributeId);
+            return _mapper.Map<ProductAttributeValueDto>(updatedAttribute);
         }
+
+        public async Task<bool> UpdateProductAttributeValueAsync(int productId, int attributeId, UpdateProductAttributeValueDto attributeDto)
+        {
+            var attributeValue = await _unitOfWork.ProductAttributes.FindByProductAndAttributeIdAsync(productId, attributeId);
+            if (attributeValue == null) return false;
+
+            _mapper.Map(attributeDto, attributeValue);
+            attributeValue.ModifiedDate = DateTime.UtcNow;
+            _unitOfWork.ProductAttributes.Update(attributeValue);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteProductAttributeValueAsync(int productId, int attributeId)
+        {
+            var attributeValue = await _unitOfWork.ProductAttributes.FindByProductAndAttributeIdAsync(productId, attributeId);
+            if (attributeValue == null) return false;
+
+            // This is a hard delete, as removing a value is usually permanent.
+            _unitOfWork.ProductAttributes.Delete(attributeValue);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        //public async Task<ProductAttribute> IProductService.AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto)
+        //{
+        //    return await _mapper.Map<ProductAttribute>(
+        //        AddOrUpdateAttributeForProductAsync(productId, attributeDto));
+        //}
     }
 }

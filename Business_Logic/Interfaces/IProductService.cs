@@ -13,10 +13,12 @@ namespace Application_Layer.Interfaces
         Task<Product?> GetProductByIdAsyncWithModel(int id);
         //Task<Product> CreateProductAsync(Product createProductDto);
         Task<ProductDto> CreateProductAsync(CreateProductDto createProductDto);
-        Task<bool> UpdateProductAsync(int id, Product productDto);
+        Task<bool> UpdateProductAsync(int id, ProductDto productDto);
         Task<bool> DeleteProductAsync(int id);
-        Task<ProductAttribute> AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto);
+        Task<ProductAttributeValueDto> AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto);
         Task<IEnumerable<ProductDto>> GetAllProductsAsync();
         Task<ProductDto?> GetProductByIdAsync(int id);
+        Task<bool> DeleteProductAttributeValueAsync(int productId, int attributeId);
+        Task<bool> UpdateProductAttributeValueAsync(int productId, int attributeId, UpdateProductAttributeValueDto attributeDto);
     }
 }

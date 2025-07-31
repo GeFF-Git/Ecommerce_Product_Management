@@ -11,5 +11,9 @@ namespace Domain_Layer.Interfaces
     {
         Task<Product?> GetProductWithDetailsAsync(int productId);
         Task<IEnumerable<Product>> GetProductsByCategoryAsync(int categoryId);
+
+        IEnumerable<Product> GetProductsByCategoryAsQueryable(int categoryId);
+        Task<Product?> GetProductWithAttributesForUpdateAsync(int productId);
+        Task<IEnumerable<Product>> GetAllWithDetailsAsync();
     }
 }

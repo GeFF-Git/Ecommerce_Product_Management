@@ -1,5 +1,6 @@
-﻿using Application_Layer.Interfaces;
-using Application_Layer;
+﻿using Application_Layer;
+using Application_Layer.Interfaces;
+using Application_Layer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,30 +18,16 @@ namespace Product_Management_Service.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<Application_Layer.Product>), 200)]
-        public async Task<IActionResult> Get()
-        {
-            var products = await _productService.GetAllProductsAsync();
-            Console.WriteLine(products);
-            return Ok(products);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _productService.GetAllProductsAsync());
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(Application_Layer.Product), 200)]
-        [ProducesResponseType(404)]
         public async Task<IActionResult> Get(int id)
         {
             var product = await _productService.GetProductByIdAsync(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-            return Ok(product);
+            return product == null ? NotFound() : Ok(product);
         }
 
-        [HttpPost]
-        [ProducesResponseType(typeof(Application_Layer.Product), 201)]
-        [ProducesResponseType(400)]
+        [HttpPost]  
         public async Task<IActionResult> Post([FromBody] Application_Layer.Models.CreateProductDto  createProductDto)
         {
             if (!ModelState.IsValid)
@@ -55,18 +42,14 @@ namespace Product_Management_Service.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> Put(int id, [FromBody] Application_Layer.Product productDto)
+        public async Task<IActionResult> Put(int id, [FromBody] ProductDto productDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
             var success = await _productService.UpdateProductAsync(id, productDto);
-            if (!success)
-            {
-                return NotFound();
-            }
-            return NoContent();
+            return success ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id}")]
@@ -75,11 +58,7 @@ namespace Product_Management_Service.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _productService.DeleteProductAsync(id);
-            if (!success)
-            {
-                return NotFound();
-            }
-            return NoContent();
+            return success ? NoContent() : NotFound();
         }
 
         [HttpPost("{productId}/attributes")]
@@ -94,6 +73,25 @@ namespace Product_Management_Service.Controllers
             {
                 return NotFound(new { message = ex.Message });
             }
+        }
+
+        [HttpPut("{productId}/attributes/{attributeId}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateAttributeValue(int productId, int attributeId, [FromBody] UpdateProductAttributeValueDto attributeDto)
+        {
+            var success = await _productService.UpdateProductAttributeValueAsync(productId, attributeId, attributeDto);
+            return success ? NoContent() : NotFound();
+        }
+
+        // *** NEW ENDPOINT FOR DELETING ***
+        [HttpDelete("{productId}/attributes/{attributeId}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteAttributeValue(int productId, int attributeId)
+        {
+            var success = await _productService.DeleteProductAttributeValueAsync(productId, attributeId);
+            return success ? NoContent() : NotFound();
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Infrastructure_Layer.Repositories
         {
             return await _dbSet
                 .Include(c => c.CategoryAttributes)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
         }
 

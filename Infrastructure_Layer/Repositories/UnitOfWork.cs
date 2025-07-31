@@ -10,6 +10,7 @@ namespace Infrastructure_Layer.Repositories
         public ICategoryRepository Categories { get; private set; }
         public IProductRepository Products { get; private set; }
         public ICategoryAttributeRepository CategoryAttributes { get; private set; }
+        public IProductAttributeRepository ProductAttributes { get; private set; }
 
         public UnitOfWork(ProductDbContext context)
         {
@@ -17,6 +18,7 @@ namespace Infrastructure_Layer.Repositories
             Categories = new CategoryRepository(_context);
             Products = new ProductRepository(_context);
             CategoryAttributes = new CategoryAttributeRepository(_context);
+            ProductAttributes = new ProductAttributeRepository(_context);
         }
 
         public async Task<int> CompleteAsync() => await _context.SaveChangesAsync();

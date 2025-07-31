@@ -10,6 +10,7 @@ namespace Domain_Layer.Interfaces
     {
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> GetAllAsync();
+        IEnumerable<T> GetAllQueryable();
         Task AddAsync(T entity);
         void Update(T entity); // Not async as it only changes entity state
         void Delete(T entity); // Not async as it only changes entity state
