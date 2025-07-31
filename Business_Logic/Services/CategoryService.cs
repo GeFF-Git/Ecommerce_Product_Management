@@ -125,6 +125,20 @@ namespace Application_Layer.Services
             return true;
         }
 
+        public async Task<bool> EnableCategoryAsync(int id)
+        {
+            var category = await _unitOfWork.Categories.GetByIdAsync(id);
+            if (category == null) return false;
+
+            // This is a soft delete, adhering to business rules.
+            category.IsActive = true;
+            category.ModifiedDate = DateTime.UtcNow;
+
+            _unitOfWork.Categories.Update(category);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
         public async Task<CategoryAttribute> AddAttributeToCategoryAsyncWithModel(int categoryId, CreateCategoryAttributeDto attributeDto)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(categoryId);
@@ -162,6 +176,18 @@ namespace Application_Layer.Services
             if (attribute == null) return false;
 
             attribute.IsActive = false; // Soft delete
+            attribute.ModifiedDate = DateTime.UtcNow;
+            _unitOfWork.CategoryAttributes.Update(attribute);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        public async Task<bool> EnableCategoryAttributeAsync(int attributeId)
+        {
+            var attribute = await _unitOfWork.CategoryAttributes.GetByIdAsync(attributeId);
+            if (attribute == null) return false;
+
+            attribute.IsActive = true; // Soft delete
             attribute.ModifiedDate = DateTime.UtcNow;
             _unitOfWork.CategoryAttributes.Update(attribute);
             await _unitOfWork.CompleteAsync();

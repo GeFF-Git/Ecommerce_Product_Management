@@ -34,29 +34,6 @@ namespace Application_Layer.Mappings
 
             CreateMap<Infrastructure_Layer.AttributeDataType, AttributeDataType>().ReverseMap();
 
-            // Product Mappings
-            //CreateMap<Infrastructure_Layer.Product, Product>()
-            //    .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName))
-            //    .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.ProductAttributes));
-            //CreateMap<CreateProductDto, Product>();
-
-            // Attribute Mappings
-            //CreateMap<ProductAttribute, ProductAttributeValueDto>()
-            //    .ForMember(dest => dest.AttributeName, opt => opt.MapFrom(src => src.Attribute.AttributeDisplayName))
-            //    .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.AttributeValue));
-
-            // New mapping for creating a product attribute value
-            //CreateMap<CreateProductAttributeValueDto, ProductAttribute>()
-            //    .ForMember(dest => dest.AttributeValue, opt => opt.MapFrom(src => src.Value));
-
-
-            // Final mapping for creating a product
-
-            //CreateMap<Category, CategoryDto>().ReverseMap();
-            //CreateMap<CreateCategoryDto, Category>();
-            //CreateMap<CategoryAttribute, CategoryAttributeDto>().ReverseMap();
-            //CreateMap<CreateCategoryAttributeDto, CategoryAttribute>();
-
             // For Reading: Maps the Category entity to its detailed DTO, including attributes.
             CreateMap<Infrastructure_Layer.Category, CategoryDto>()
                 .ForMember(cat => cat.Attributes, opt => opt.MapFrom(src => src.CategoryAttributes));
@@ -66,7 +43,8 @@ namespace Application_Layer.Mappings
             CreateMap<CreateCategoryDto, Infrastructure_Layer.Category>();
 
             // For Updating: Maps the DTO for updating a category to the Category entity.
-            CreateMap<UpdateCategoryDto, Infrastructure_Layer.Category>();
+            CreateMap<UpdateCategoryDto, Infrastructure_Layer.Category>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); ;
 
             // Maps CategoryDto to Category Entity 
             CreateMap<CategoryDto, Infrastructure_Layer.Category>();
@@ -86,17 +64,23 @@ namespace Application_Layer.Mappings
                 //.ForMember(dest => dest.AttributeDisplayName, opt => opt.MapFrom(src => src.AttributeDisplayName));
 
             // For Updating: Maps the DTO for updating an attribute to the CategoryAttribute entity.
-            CreateMap<UpdateCategoryAttributeDto, Infrastructure_Layer.CategoryAttribute>();
+            CreateMap<UpdateCategoryAttributeDto, Infrastructure_Layer.CategoryAttribute>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
             //CreateMap<Product, ProductDto>().ReverseMap();
             CreateMap<Infrastructure_Layer.Product, ProductDto>()
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName))
                 .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.ProductAttributes)).ReverseMap();
+
             CreateMap<CreateProductDto, Infrastructure_Layer.Product>();
-            CreateMap<UpdateProductDto, Infrastructure_Layer.Product>();
+
+            CreateMap<UpdateProductDto, Infrastructure_Layer.Product>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
             CreateMap<Infrastructure_Layer.ProductAttribute, ProductAttributeValueDto>()
                 .ForMember(dest => dest.AttributeName, opt => opt.MapFrom(src => src.Attribute.AttributeDisplayName))
                 .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.AttributeValue));
+
             CreateMap<CreateProductAttributeValueDto, Infrastructure_Layer.ProductAttribute>()
                 .ForMember(dest => dest.AttributeValue, opt => opt.MapFrom(src => src.Value));
 
@@ -105,7 +89,8 @@ namespace Application_Layer.Mappings
                 .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.AttributeValue));
 
             CreateMap<UpdateProductAttributeValueDto, Infrastructure_Layer.ProductAttribute>()
-                .ForMember(dest => dest.AttributeValue, opt => opt.MapFrom(src => src.Value));
+                .ForMember(dest => dest.AttributeValue, opt => opt.MapFrom(src => src.Value))
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }

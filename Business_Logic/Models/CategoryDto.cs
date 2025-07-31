@@ -19,6 +19,7 @@ namespace Application_Layer.Models
         public string AttributeName { get; set; }
         public string AttributeDisplayName { get; set; }
         public int DataTypeId { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class CategoryDto

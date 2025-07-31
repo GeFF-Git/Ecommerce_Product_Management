@@ -42,7 +42,7 @@ namespace Product_Management_Service.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> Put(int id, [FromBody] ProductDto productDto)
+        public async Task<IActionResult> Put(int id, [FromBody] UpdateProductDto productDto)
         {
             if (!ModelState.IsValid)
             {
@@ -58,6 +58,15 @@ namespace Product_Management_Service.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _productService.DeleteProductAsync(id);
+            return success ? NoContent() : NotFound();
+        }
+
+        [HttpPatch("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Enable(int id)
+        {
+            var success = await _productService.EnableProductAsync(id);
             return success ? NoContent() : NotFound();
         }
 

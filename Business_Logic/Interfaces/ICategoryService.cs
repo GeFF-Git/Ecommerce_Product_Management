@@ -15,11 +15,13 @@ namespace Application_Layer.Interfaces
         Task<Category> CreateCategoryAsync(Category createCategoryDto);
         Task<bool> UpdateCategoryAsync(int id, UpdateCategoryDto categoryDto);
         Task<bool> DeleteCategoryAsync(int id);
+        Task<bool> EnableCategoryAsync(int id);
         Task<CategoryAttribute> AddAttributeToCategoryAsyncWithModel(int categoryId, CreateCategoryAttributeDto attributeDto);
         Task<CategoryDto?> GetCategoryByIdAsync(int id);
         Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();
         Task<CategoryAttributeDto> AddAttributeToCategoryAsync(int categoryId, CreateCategoryAttributeDto attributeDto);
         Task<bool> UpdateCategoryAttributeAsync(int attributeId, UpdateCategoryAttributeDto attributeDto);
         Task<bool> DeleteCategoryAttributeAsync(int attributeId);
+        Task<bool> EnableCategoryAttributeAsync(int attributeId);
     }
 }

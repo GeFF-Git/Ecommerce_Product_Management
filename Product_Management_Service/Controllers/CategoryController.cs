@@ -17,7 +17,7 @@ namespace Product_Management_Service.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<Application_Layer.Category>), 200)]
+        [ProducesResponseType(200)]
         public async Task<IActionResult> Get()
         {
             var categories = await _categoryService.GetAllCategoriesAsync();
@@ -25,7 +25,7 @@ namespace Product_Management_Service.Controllers
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(Application_Layer.Category), 200)]
+        [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Get(int id)
         {
@@ -38,7 +38,7 @@ namespace Product_Management_Service.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(typeof(Application_Layer.Category), 201)]
+        [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Post([FromBody] CreateCategoryDto createCategoryDto)
         {
@@ -81,6 +81,19 @@ namespace Product_Management_Service.Controllers
             return NoContent();
         }
 
+        [HttpPatch("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Enable(int id)
+        {
+            var success = await _categoryService.EnableCategoryAsync(id);
+            if (!success)
+            {
+                return NotFound();
+            }
+            return NoContent();
+        }
+
         // This endpoint allows adding an attribute to an already existing category.
         [HttpPost("{categoryId}/attributes")]
         [ProducesResponseType(typeof(CategoryAttribute), 201)]
@@ -113,6 +126,15 @@ namespace Product_Management_Service.Controllers
         public async Task<IActionResult> DeleteAttribute(int attributeId)
         {
             var success = await _categoryService.DeleteCategoryAttributeAsync(attributeId);
+            return success ? NoContent() : NotFound();
+        }
+
+        [HttpPatch("attributes/{attributeId}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> EnableAttribute(int attributeId)
+        {
+            var success = await _categoryService.EnableCategoryAttributeAsync(attributeId);
             return success ? NoContent() : NotFound();
         }
     }

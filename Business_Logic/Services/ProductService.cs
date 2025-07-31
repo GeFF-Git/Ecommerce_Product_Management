@@ -27,13 +27,7 @@ namespace Application_Layer.Services
             var product = await _unitOfWork.Products.GetAllWithDetailsAsync();
             return _mapper.Map<IEnumerable<ProductDto>>(product); 
         }
-        //public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
-        //{
-        //    // This is more optimized than loading full entities first.
-        //    return await _unitOfWork.Products.GetAllQueryable() // Assumes you add a method that returns IQueryable
-        //        .ProjectTo<ProductDto>(_configurationProvider)
-        //        .ToListAsync();
-        //}
+
         public async Task<ProductDto?> GetProductByIdAsync(int id) => _mapper.Map<ProductDto>(await _unitOfWork.Products.GetProductWithDetailsAsync(id));
 
         public async Task<IEnumerable<Product>> GetAllProductsAsyncWithModel()
@@ -71,7 +65,7 @@ namespace Application_Layer.Services
             return _mapper.Map<ProductDto>(createdProduct);
         }
 
-        public async Task<bool> UpdateProductAsync(int id, ProductDto productDto)
+        public async Task<bool> UpdateProductAsync(int id, UpdateProductDto productDto)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(id);
             if (product == null) return false;
@@ -90,6 +84,19 @@ namespace Application_Layer.Services
             if (product == null) return false;
 
             product.IsActive = false;
+            product.ModifiedDate = DateTime.UtcNow;
+
+            _unitOfWork.Products.Update(product);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        public async Task<bool> EnableProductAsync(int id)
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(id);
+            if (product == null) return false;
+
+            product.IsActive = true;
             product.ModifiedDate = DateTime.UtcNow;
 
             _unitOfWork.Products.Update(product);
@@ -155,11 +162,5 @@ namespace Application_Layer.Services
             await _unitOfWork.CompleteAsync();
             return true;
         }
-
-        //public async Task<ProductAttribute> IProductService.AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto)
-        //{
-        //    return await _mapper.Map<ProductAttribute>(
-        //        AddOrUpdateAttributeForProductAsync(productId, attributeDto));
-        //}
     }
 }
