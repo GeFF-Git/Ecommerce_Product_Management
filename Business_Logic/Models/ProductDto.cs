@@ -17,6 +17,7 @@ namespace Application_Layer.Models
         public string CategoryName { get; set; }
         public string ProductSku { get; set; }
         public string ProductName { get; set; }
+        public string Brand { get; set; }
         public string? ProductDescription { get; set; }
         public decimal SalePrice { get; set; }
         public int StockQuantity { get; set; }
@@ -30,6 +31,7 @@ namespace Application_Layer.Models
     public class ProductAttributeValueDto
     {
         public string AttributeName { get; set; }
+        public string DisplayName { get; set; }
         public string? Value { get; set; }
     }
 
