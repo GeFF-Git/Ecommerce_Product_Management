@@ -11,16 +11,11 @@ public partial class Product
 
     public int CategoryId { get; set; }
 
-    [StringLength(50)]
     public string ProductSku { get; set; } = null!;
 
-    [StringLength(200)]
     public string ProductName { get; set; } = null!;
 
-    [StringLength(2000)]
     public string? ProductDescription { get; set; }
-
-    [StringLength(100)]
     public string? Brand { get; set; }
 
     public decimal SalePrice { get; set; }

@@ -1,4 +1,7 @@
 ﻿using Moq;
+using AutoMapper;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Product_Management_Tests;
 
@@ -8,6 +11,8 @@ public class CategoryServiceTests
     private Mock<IUnitOfWork> _mockUnitOfWork;
     private Mock<ICategoryRepository> _mockCategoryRepo;
     private Mock<ICategoryAttributeRepository> _mockCategoryAttributeRepo;
+    private IMapper _mapper;
+    private ILoggerFactory _logger;
 
     [SetUp]
     public void Setup()
@@ -20,6 +25,18 @@ public class CategoryServiceTests
         // Configure the Unit of Work mock to return the mocked repositories
         _mockUnitOfWork.Setup(uow => uow.Categories).Returns(_mockCategoryRepo.Object);
         _mockUnitOfWork.Setup(uow => uow.CategoryAttributes).Returns(_mockCategoryAttributeRepo.Object);
+
+        // Configure AutoMapper with the necessary profiles
+        _logger = new NullLoggerFactory();
+        var configuration = new MapperConfiguration(cfg => cfg.AddProfile<Application_Layer.Mappings.MappingProfile>(), _logger);
+        _mapper = configuration.CreateMapper();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        // Dispose of the logger factory to satisfy disposal requirements
+        _logger?.Dispose();
     }
 
     [Test]
@@ -27,10 +44,10 @@ public class CategoryServiceTests
     {
         // Arrange
         var categories = new List<Infrastructure_Layer.Category>
-            {
-                new Infrastructure_Layer.Category { CategoryId = 1, CategoryName = "Dresses" },
-                new Infrastructure_Layer.Category { CategoryId = 2, CategoryName = "Shoes" }
-            };
+        {
+            new Infrastructure_Layer.Category { CategoryId = 1, CategoryName = "Dresses" },
+            new Infrastructure_Layer.Category { CategoryId = 2, CategoryName = "Shoes" }
+        };
         _mockCategoryRepo.Setup(repo => repo.GetAllWithAttributesAsync()).ReturnsAsync(categories);
         var service = new CategoryService(_mockUnitOfWork.Object, _mapper);
 

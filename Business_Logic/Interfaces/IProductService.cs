@@ -9,9 +9,6 @@ namespace Application_Layer.Interfaces
 {
     public interface IProductService
     {
-        Task<IEnumerable<Product>> GetAllProductsAsyncWithModel();
-        Task<Product?> GetProductByIdAsyncWithModel(int id);
-        //Task<Product> CreateProductAsync(Product createProductDto);
         Task<ProductDto> CreateProductAsync(CreateProductDto createProductDto);
         Task<bool> UpdateProductAsync(int id, UpdateProductDto productDto);
         Task<bool> DeleteProductAsync(int id);

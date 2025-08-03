@@ -9,10 +9,7 @@ namespace Application_Layer.Interfaces
 {
     public interface ICategoryService
     {
-        Task<IEnumerable<Category>> GetAllCategoriesAsyncWithModel();
-        Task<Category?> GetCategoryByIdAsyncWithModel(int id);
         Task<CategoryDto> CreateCategoryAsync(CreateCategoryDto createCategoryDto);
-        Task<Category> CreateCategoryAsync(Category createCategoryDto);
         Task<bool> UpdateCategoryAsync(int id, UpdateCategoryDto categoryDto);
         Task<bool> DeleteCategoryAsync(int id);
         Task<bool> EnableCategoryAsync(int id);

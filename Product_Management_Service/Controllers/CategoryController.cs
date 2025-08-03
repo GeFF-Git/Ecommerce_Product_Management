@@ -10,114 +10,115 @@ namespace Product_Management_Service.Controllers
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
-
-        public CategoriesController(ICategoryService categoryService)
-        {
-            _categoryService = categoryService;
-        }
+        public CategoriesController(ICategoryService categoryService) => _categoryService = categoryService;
 
         [HttpGet]
-        [ProducesResponseType(200)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> GetAll()
         {
-            var categories = await _categoryService.GetAllCategoriesAsync();
-            return Ok(categories);
+            try
+            {
+                var categories = await _categoryService.GetAllCategoriesAsync();
+                return Ok(categories);
+            }
+            catch (Exception ex)
+            {
+                // In a real app, log the exception ex
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var category = await _categoryService.GetCategoryByIdAsync(id);
-            if (category == null)
+            try
             {
-                return NotFound();
+                var category = await _categoryService.GetCategoryByIdAsync(id);
+                return category == null ? NotFound($"Category with ID {id} not found.") : Ok(category);
             }
-            return Ok(category);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPost]
-        [ProducesResponseType(201)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> Post([FromBody] CreateCategoryDto createCategoryDto)
+        public async Task<IActionResult> Create([FromBody] CreateCategoryDto createCategoryDto)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                var newCategory = await _categoryService.CreateCategoryAsync(createCategoryDto);
+                return CreatedAtAction(nameof(GetById), new { id = newCategory.CategoryId }, newCategory);
             }
-            var newCategory = await _categoryService.CreateCategoryAsync(createCategoryDto);
-            return CreatedAtAction(nameof(Get), new { id = newCategory.CategoryId }, newCategory);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while creating the category.");
+            }
         }
 
-        [HttpPut("{id}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Put(int id, [FromBody] UpdateCategoryDto categoryDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var success = await _categoryService.UpdateCategoryAsync(id, categoryDto);
-            if (!success)
-            {
-                return NotFound();
-            }
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var success = await _categoryService.DeleteCategoryAsync(id);
-            if (!success)
-            {
-                return NotFound();
-            }
-            return NoContent();
-        }
-
-        [HttpPatch("{id}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Enable(int id)
-        {
-            var success = await _categoryService.EnableCategoryAsync(id);
-            if (!success)
-            {
-                return NotFound();
-            }
-            return NoContent();
-        }
-
-        // This endpoint allows adding an attribute to an already existing category.
         [HttpPost("{categoryId}/attributes")]
-        [ProducesResponseType(typeof(CategoryAttribute), 201)]
-        [ProducesResponseType(404)]
         public async Task<IActionResult> AddAttribute(int categoryId, [FromBody] CreateCategoryAttributeDto attributeDto)
         {
             try
             {
                 var newAttribute = await _categoryService.AddAttributeToCategoryAsync(categoryId, attributeDto);
-                // A more correct RESTful response would be to point to a new "GetAttribute" endpoint
-                return CreatedAtAction(nameof(Get), new { id = categoryId }, newAttribute);
+                return CreatedAtAction(nameof(GetById), new { id = categoryId }, newAttribute);
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while adding the attribute.");
             }
         }
+
+        [HttpPut("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDto categoryDto)
+        {
+            try
+            {
+                var success = await _categoryService.UpdateCategoryAsync(id, categoryDto);
+                return success ? NoContent() : NotFound($"Category with ID {id} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while updating the category.");
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            try
+            {
+                var success = await _categoryService.DeleteCategoryAsync(id);
+                return success ? NoContent() : NotFound($"Category with ID {id} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while deleting the category.");
+            }
+        }
+
         [HttpPut("attributes/{attributeId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> UpdateAttribute(int attributeId, [FromBody] UpdateCategoryAttributeDto attributeDto)
         {
-            var success = await _categoryService.UpdateCategoryAttributeAsync(attributeId, attributeDto);
-            return success ? NoContent() : NotFound();
+            try
+            {
+                var success = await _categoryService.UpdateCategoryAttributeAsync(attributeId, attributeDto);
+                return success ? NoContent() : NotFound($"Attribute with ID {attributeId} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while updating the attribute.");
+            }
         }
 
         [HttpDelete("attributes/{attributeId}")]
@@ -125,17 +126,15 @@ namespace Product_Management_Service.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteAttribute(int attributeId)
         {
-            var success = await _categoryService.DeleteCategoryAttributeAsync(attributeId);
-            return success ? NoContent() : NotFound();
-        }
-
-        [HttpPatch("attributes/{attributeId}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> EnableAttribute(int attributeId)
-        {
-            var success = await _categoryService.EnableCategoryAttributeAsync(attributeId);
-            return success ? NoContent() : NotFound();
+            try
+            {
+                var success = await _categoryService.DeleteCategoryAttributeAsync(attributeId);
+                return success ? NoContent() : NotFound($"Attribute with ID {attributeId} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while deleting the attribute.");
+            }
         }
     }
 

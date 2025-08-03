@@ -31,7 +31,7 @@ namespace Application_Layer.Models
     public class ProductAttributeValueDto
     {
         public string AttributeName { get; set; }
-        public string DisplayName { get; set; }
+        public string AttributeDisplayName { get; set; }
         public string? Value { get; set; }
     }
 

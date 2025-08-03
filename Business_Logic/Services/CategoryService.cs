@@ -25,13 +25,6 @@ namespace Application_Layer.Services
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync() => _mapper.Map<IEnumerable<CategoryDto>>(await _unitOfWork.Categories.GetAllWithAttributesAsync());
-
-        //public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
-        //{
-        //    var categories = await _unitOfWork.Categories.GetAllAsync();
-        //    var categoryAttributes = await _unitOfWork.Categories.GetAllWithAttributesAsync();
-        //    return _mapper.Map<IEnumerable<CategoryDto>>(await _unitOfWork.Categories.GetAllWithAttributesAsync());
-        //}
         public async Task<CategoryDto?> GetCategoryByIdAsync(int id) => _mapper.Map<CategoryDto>(await _unitOfWork.Categories.GetCategoryWithAttributesAsync(id));
 
         public async Task<IEnumerable<Category>> GetAllCategoriesAsyncWithModel()
@@ -61,7 +54,6 @@ namespace Application_Layer.Services
 
         public async Task<Category> CreateCategoryAsync(Category createCategoryDto)
         {
-            // *** THE FIX IS HERE ***
             // Instead of mapping the entire complex DTO, we manually create the entity.
             // This is safer and avoids the complex mapping issue.
             var categoryEntity = new Infrastructure_Layer.Category
@@ -85,8 +77,6 @@ namespace Application_Layer.Services
             var newAttribute = _mapper.Map<Infrastructure_Layer.CategoryAttribute>(attributeDto);
             newAttribute.CategoryId = categoryId;
 
-            // The following line is fixed: removed the incorrect curly braces and object initializer syntax.
-            // Instead, you likely want to add the attribute to the category's attributes collection.
             var category = await _unitOfWork.Categories.GetByIdAsync(categoryId);
             if (category.CategoryAttributes == null)
                 category.CategoryAttributes = new List<Infrastructure_Layer.CategoryAttribute>();
@@ -130,7 +120,6 @@ namespace Application_Layer.Services
             var category = await _unitOfWork.Categories.GetByIdAsync(id);
             if (category == null) return false;
 
-            // This is a soft delete, adhering to business rules.
             category.IsActive = true;
             category.ModifiedDate = DateTime.UtcNow;
 
@@ -148,7 +137,7 @@ namespace Application_Layer.Services
             }
 
             var newAttribute = _mapper.Map<Infrastructure_Layer.CategoryAttribute>(attributeDto);
-            newAttribute.CategoryId = categoryId; // Ensure it's linked to the correct category
+            newAttribute.CategoryId = categoryId;
 
             // EF Core is smart enough to know this is an addition to the category's collection
             category.CategoryAttributes.Add(newAttribute);
@@ -160,7 +149,7 @@ namespace Application_Layer.Services
 
         public async Task<bool> UpdateCategoryAttributeAsync(int attributeId, UpdateCategoryAttributeDto attributeDto)
         {
-            var attribute = await _unitOfWork.CategoryAttributes.GetByIdAsync(attributeId); // Assuming generic repo has this
+            var attribute = await _unitOfWork.CategoryAttributes.GetByIdAsync(attributeId);
             if (attribute == null || attribute.IsActive != true) return false;
 
             _mapper.Map(attributeDto, attribute);
@@ -187,7 +176,7 @@ namespace Application_Layer.Services
             var attribute = await _unitOfWork.CategoryAttributes.GetByIdAsync(attributeId);
             if (attribute == null) return false;
 
-            attribute.IsActive = true; // Soft delete
+            attribute.IsActive = true;
             attribute.ModifiedDate = DateTime.UtcNow;
             _unitOfWork.CategoryAttributes.Update(attribute);
             await _unitOfWork.CompleteAsync();

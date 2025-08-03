@@ -11,67 +11,55 @@ namespace Product_Management_Service.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
-
-        public ProductsController(IProductService productService)
-        {
-            _productService = productService;
-        }
+        public ProductsController(IProductService productService) => _productService = productService;
 
         [HttpGet]
-        public async Task<IActionResult> GetAll() => Ok(await _productService.GetAllProductsAsync());
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                return Ok(await _productService.GetAllProductsAsync());
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var product = await _productService.GetProductByIdAsync(id);
-            return product == null ? NotFound() : Ok(product);
-        }
-
-        [HttpPost]  
-        public async Task<IActionResult> Post([FromBody] Application_Layer.Models.CreateProductDto  createProductDto)
-        {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                var product = await _productService.GetProductByIdAsync(id);
+                return product == null ? NotFound($"Product with ID {id} not found.") : Ok(product);
             }
-            var newProduct = await _productService.CreateProductAsync(createProductDto);
-            return Ok(newProduct);
-        }
-
-        [HttpPut("{id}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Put(int id, [FromBody] UpdateProductDto productDto)
-        {
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                return StatusCode(500, "An unexpected error occurred.");
             }
-            var success = await _productService.UpdateProductAsync(id, productDto);
-            return success ? NoContent() : NotFound();
         }
 
-        [HttpDelete("{id}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Delete(int id)
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateProductDto createProductDto)
         {
-            var success = await _productService.DeleteProductAsync(id);
-            return success ? NoContent() : NotFound();
-        }
-
-        [HttpPatch("{id}")]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Enable(int id)
-        {
-            var success = await _productService.EnableProductAsync(id);
-            return success ? NoContent() : NotFound();
+            try
+            {
+                var newProduct = await _productService.CreateProductAsync(createProductDto);
+                return CreatedAtAction(nameof(GetById), new { id = newProduct.ProductId }, newProduct);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while creating the product.");
+            }
         }
 
         [HttpPost("{productId}/attributes")]
-        public async Task<IActionResult> AddOrUpdateAttribute(int productId, [FromBody] Application_Layer.Models.CreateProductAttributeValueDto attributeDto)
+        public async Task<IActionResult> AddAttribute(int productId, [FromBody] CreateProductAttributeValueDto attributeDto)
         {
             try
             {
@@ -80,7 +68,43 @@ namespace Product_Management_Service.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(new { message = ex.Message });
+                return Conflict(new { message = ex.Message }); // Use 409 Conflict for existing resource
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while adding the attribute value.");
+            }
+        }
+
+        [HttpPut("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto productDto)
+        {
+            try
+            {
+                var success = await _productService.UpdateProductAsync(id, productDto);
+                return success ? NoContent() : NotFound($"Product with ID {id} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while updating the product.");
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            try
+            {
+                var success = await _productService.DeleteProductAsync(id);
+                return success ? NoContent() : NotFound($"Product with ID {id} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while deleting the product.");
             }
         }
 
@@ -89,18 +113,31 @@ namespace Product_Management_Service.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> UpdateAttributeValue(int productId, int attributeId, [FromBody] UpdateProductAttributeValueDto attributeDto)
         {
-            var success = await _productService.UpdateProductAttributeValueAsync(productId, attributeId, attributeDto);
-            return success ? NoContent() : NotFound();
+            try
+            {
+                var success = await _productService.UpdateProductAttributeValueAsync(productId, attributeId, attributeDto);
+                return success ? NoContent() : NotFound($"Attribute value for product {productId} and attribute {attributeId} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while updating the attribute value.");
+            }
         }
 
-        // *** NEW ENDPOINT FOR DELETING ***
         [HttpDelete("{productId}/attributes/{attributeId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteAttributeValue(int productId, int attributeId)
         {
-            var success = await _productService.DeleteProductAttributeValueAsync(productId, attributeId);
-            return success ? NoContent() : NotFound();
+            try
+            {
+                var success = await _productService.DeleteProductAttributeValueAsync(productId, attributeId);
+                return success ? NoContent() : NotFound($"Attribute value for product {productId} and attribute {attributeId} not found.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred while deleting the attribute value.");
+            }
         }
     }
 }

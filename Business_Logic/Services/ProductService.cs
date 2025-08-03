@@ -2,12 +2,6 @@
 using Application_Layer.Models;
 using AutoMapper;
 using Domain_Layer.Interfaces;
-using Infrastructure_Layer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 namespace Application_Layer.Services
 {
     public class ProductService : IProductService
@@ -30,19 +24,6 @@ namespace Application_Layer.Services
 
         public async Task<ProductDto?> GetProductByIdAsync(int id) => _mapper.Map<ProductDto>(await _unitOfWork.Products.GetProductWithDetailsAsync(id));
 
-        public async Task<IEnumerable<Product>> GetAllProductsAsyncWithModel()
-        {
-            var products = await _unitOfWork.Products.GetAllAsync();
-            return _mapper.Map<IEnumerable<Product>>(products);
-        }
-
-        public async Task<Product?> GetProductByIdAsyncWithModel(int id)
-        {
-            var product = await _unitOfWork.Products.GetProductWithDetailsAsync(id);
-            if (product == null) return null;
-            return _mapper.Map<Product>(product);
-        }
-
         public async Task<ProductDto> CreateProductAsync(CreateProductDto createProductDto)
         {
             
@@ -57,8 +38,6 @@ namespace Application_Layer.Services
                 throw new InvalidOperationException($"Cannot create product. Category with ID {createProductDto.CategoryId} does not exist.");
             }
             product.Category = null;
-            //var category = await _categoryService.GetCategoryByIdAsync(product.CategoryId);
-            //product.Category = _mapper.Map<Infrastructure_Layer.Category>(category);
             await _unitOfWork.Products.AddAsync(product);
             await _unitOfWork.CompleteAsync();
             var createdProduct = await _unitOfWork.Products.GetProductWithDetailsAsync(product.ProductId);
@@ -104,11 +83,8 @@ namespace Application_Layer.Services
             return true;
         }
 
-        // New method implementation for adding/updating a product's attribute value
         public async Task<ProductAttributeValueDto> AddOrUpdateAttributeForProductAsync(int productId, CreateProductAttributeValueDto attributeDto)
         {
-            // *** THIS IS THE CORRECTED LOGIC ***
-            // 1. Use the new repository method to get the product AND its attributes for tracking.
             var product = await _unitOfWork.Products.GetProductWithAttributesForUpdateAsync(productId);
             if (product == null)
             {
@@ -131,10 +107,7 @@ namespace Application_Layer.Services
                 product.ProductAttributes.Add(newAttributeValue);
             }
 
-            // 2. Now, when you save, EF Core knows about the added/updated item and will save it correctly.
             await _unitOfWork.CompleteAsync();
-
-            // 3. Reload to get all details for the response DTO.
             var reloadedProduct = await _unitOfWork.Products.GetProductWithDetailsAsync(productId);
             var updatedAttribute = reloadedProduct.ProductAttributes.First(pa => pa.AttributeId == attributeDto.AttributeId);
             return _mapper.Map<ProductAttributeValueDto>(updatedAttribute);
