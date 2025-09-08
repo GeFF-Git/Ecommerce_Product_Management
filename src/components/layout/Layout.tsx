@@ -1,9 +1,11 @@
 import React from 'react';
-import { Box, useTheme } from '@mui/material';
+import { motion } from 'framer-motion';
 import { useSignals } from '@preact/signals-react/runtime';
-import { sidebarOpen } from '@/store/signals';
+import { Toaster } from 'react-hot-toast';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import CommandPalette from '../features/CommandPalette';
+import { sidebarOpen } from '@/store/signals';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,45 +13,42 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   useSignals();
-  const theme = useTheme();
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Header */}
-      <Header />
-      
-      {/* Sidebar */}
+    <div className="min-h-screen bg-background">
       <Sidebar />
-      
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          ml: sidebarOpen.value 
-            ? `${theme.custom.sidebar.width}px` 
-            : `${theme.custom.sidebar.collapsedWidth}px`,
-          mt: `${theme.custom.header.height}px`,
-          transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          backgroundColor: theme.palette.background.default,
-          minHeight: `calc(100vh - ${theme.custom.header.height}px)`,
-          position: 'relative',
-        }}
-      >
-        <Box
-          sx={{
-            p: 3,
-            maxWidth: '100%',
-            animation: 'fadeIn 0.5s ease-in-out',
-          }}
+      <div className="flex flex-col">
+        <Header />
+        <motion.main
+          animate={{ paddingLeft: sidebarOpen.value ? 280 : 80 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="flex-1 p-6"
+          id="main-content"
         >
-          {children}
-        </Box>
-      </Box>
-    </Box>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {children}
+          </motion.div>
+        </motion.main>
+      </div>
+      
+      {/* Global Components */}
+      <CommandPalette />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'hsl(var(--background))',
+            color: 'hsl(var(--foreground))',
+            border: '1px solid hsl(var(--border))',
+          },
+        }}
+      />
+    </div>
   );
 };
 

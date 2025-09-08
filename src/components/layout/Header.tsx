@@ -1,188 +1,140 @@
 import React from 'react';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
-  Box,
-  Badge,
-  Avatar,
-  Tooltip,
-  useTheme,
-} from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Search as SearchIcon,
-  Notifications as NotificationsIcon,
-  Settings as SettingsIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
-} from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import { useSignals } from '@preact/signals-react/runtime';
-import { sidebarOpen, toggleSidebar, toggleTheme, isDarkMode } from '@/store/signals';
-import SearchBar from '@/components/common/SearchBar';
+import { 
+  Search, 
+  Bell, 
+  Settings, 
+  Sun, 
+  Moon, 
+  Monitor,
+  Command,
+  User
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
+import { 
+  sidebarOpen, 
+  themeMode, 
+  setTheme, 
+  searchQuery, 
+  setSearchQuery,
+  notifications,
+  toggleCommandPalette
+} from '@/store/signals';
+import { cn } from '@/lib/utils';
 
 const Header: React.FC = () => {
   useSignals();
-  const theme = useTheme();
+  const [searchFocused, setSearchFocused] = React.useState(false);
+
+  const handleThemeToggle = () => {
+    const themes = ['light', 'dark', 'system'] as const;
+    const currentIndex = themes.indexOf(themeMode.value);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    setTheme(nextTheme);
+  };
+
+  const getThemeIcon = () => {
+    switch (themeMode.value) {
+      case 'light':
+        return Sun;
+      case 'dark':
+        return Moon;
+      default:
+        return Monitor;
+    }
+  };
+
+  const ThemeIcon = getThemeIcon();
+  const unreadNotifications = notifications.value.filter(n => !n.read).length;
 
   return (
-    <AppBar
-      position="fixed"
-      elevation={0}
-      sx={{
-        zIndex: theme.zIndex.drawer + 1,
-        backgroundColor: theme.palette.background.paper,
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        backdropFilter: 'blur(10px)',
-        background: isDarkMode.value 
-          ? 'rgba(30, 41, 59, 0.8)' 
-          : 'rgba(255, 255, 255, 0.8)',
-      }}
+    <motion.header
+      animate={{ paddingLeft: sidebarOpen.value ? 280 : 80 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6"
     >
-      <Toolbar sx={{ height: theme.custom.header.height }}>
-        {/* Menu Button */}
-        <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="toggle sidebar"
-          onClick={toggleSidebar}
-          sx={{
-            mr: 2,
-            color: theme.palette.text.primary,
-            '&:hover': {
-              backgroundColor: theme.palette.action.hover,
-              transform: 'scale(1.1)',
-            },
-            transition: 'all 0.2s ease-in-out',
-          }}
+      {/* Search */}
+      <div className="flex-1 max-w-md">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search products, categories..."
+            value={searchQuery.value}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            className={cn(
+              'pl-10 pr-4 transition-all duration-200',
+              searchFocused && 'ring-2 ring-primary'
+            )}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        {/* Command Palette */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleCommandPalette}
+          className="relative"
         >
-          <MenuIcon />
-        </IconButton>
+          <Command className="h-4 w-4" />
+        </Button>
 
-        {/* Logo and Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mr: 4 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mr: 2,
-              animation: 'bounceSubtle 2s infinite',
-            }}
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleThemeToggle}
+          className="relative"
+        >
+          <motion.div
+            key={themeMode.value}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
           >
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '1.2rem',
-              }}
-            >
-              P
-            </Typography>
-          </Box>
-          <Typography
-            variant="h6"
-            sx={{
-              color: theme.palette.text.primary,
-              fontWeight: 600,
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            Product Manager
-          </Typography>
-        </Box>
+            <ThemeIcon className="h-4 w-4" />
+          </motion.div>
+        </Button>
 
-        {/* Search Bar */}
-        <Box sx={{ flexGrow: 1, maxWidth: 600, mx: 2 }}>
-          <SearchBar />
-        </Box>
-
-        {/* Action Buttons */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* Theme Toggle */}
-          <Tooltip title={isDarkMode.value ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-            <IconButton
-              onClick={toggleTheme}
-              sx={{
-                color: theme.palette.text.primary,
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
-                  transform: 'rotate(180deg)',
-                },
-                transition: 'all 0.3s ease-in-out',
-              }}
+        {/* Notifications */}
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-4 w-4" />
+          {unreadNotifications > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-1 -right-1"
             >
-              {isDarkMode.value ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
-          </Tooltip>
-
-          {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton
-              sx={{
-                color: theme.palette.text.primary,
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
-                  transform: 'scale(1.1)',
-                },
-                transition: 'all 0.2s ease-in-out',
-              }}
-            >
-              <Badge badgeContent={3} color="error">
-                <NotificationsIcon />
+              <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 text-xs">
+                {unreadNotifications > 9 ? '9+' : unreadNotifications}
               </Badge>
-            </IconButton>
-          </Tooltip>
+            </motion.div>
+          )}
+        </Button>
 
-          {/* Settings */}
-          <Tooltip title="Settings">
-            <IconButton
-              sx={{
-                color: theme.palette.text.primary,
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
-                  transform: 'rotate(90deg)',
-                },
-                transition: 'all 0.3s ease-in-out',
-              }}
-            >
-              <SettingsIcon />
-            </IconButton>
-          </Tooltip>
+        {/* Settings */}
+        <Button variant="ghost" size="icon">
+          <Settings className="h-4 w-4" />
+        </Button>
 
-          {/* User Avatar */}
-          <Tooltip title="User Profile">
-            <IconButton
-              sx={{
-                ml: 1,
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                },
-                transition: 'all 0.2s ease-in-out',
-              }}
-            >
-              <Avatar
-                sx={{
-                  width: 36,
-                  height: 36,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                }}
-              >
-                A
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Toolbar>
-    </AppBar>
+        {/* User Menu */}
+        <Button variant="ghost" size="icon" className="relative">
+          <User className="h-4 w-4" />
+        </Button>
+      </div>
+    </motion.header>
   );
 };
 

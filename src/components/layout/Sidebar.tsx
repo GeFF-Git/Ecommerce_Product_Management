@@ -1,38 +1,26 @@
 import React from 'react';
-import {
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Box,
-  Typography,
-  Divider,
-  Collapse,
-  useTheme,
-  alpha,
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  Category as CategoryIcon,
-  Inventory as ProductIcon,
-  Settings as SettingsIcon,
-  ExpandLess,
-  ExpandMore,
-  Add as AddIcon,
-  List as ListIcon,
-} from '@mui/icons-material';
+import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSignals } from '@preact/signals-react/runtime';
-import { sidebarOpen, currentPage, setCurrentPage } from '@/store/signals';
-import { ROUTES } from '@/utils/constants';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Home, 
+  Package, 
+  FolderOpen, 
+  BarChart3, 
+  Settings, 
+  ChevronLeft,
+  Plus,
+  List
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { sidebarOpen, toggleSidebar } from '@/store/signals';
+import { ROUTES } from '@/constants';
 
 interface NavigationItem {
   id: string;
   label: string;
   path: string;
-  icon: React.ComponentType;
+  icon: React.ComponentType<{ className?: string }>;
   children?: NavigationItem[];
 }
 
@@ -41,80 +29,72 @@ const navigationItems: NavigationItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     path: ROUTES.DASHBOARD,
-    icon: DashboardIcon,
-  },
-  {
-    id: 'categories',
-    label: 'Categories',
-    path: ROUTES.CATEGORIES,
-    icon: CategoryIcon,
-    children: [
-      {
-        id: 'categories-list',
-        label: 'View All',
-        path: ROUTES.CATEGORIES,
-        icon: ListIcon,
-      },
-      {
-        id: 'categories-create',
-        label: 'Create New',
-        path: `${ROUTES.CATEGORIES}/create`,
-        icon: AddIcon,
-      },
-    ],
+    icon: Home,
   },
   {
     id: 'products',
     label: 'Products',
     path: ROUTES.PRODUCTS,
-    icon: ProductIcon,
+    icon: Package,
     children: [
       {
         id: 'products-list',
-        label: 'View All',
+        label: 'All Products',
         path: ROUTES.PRODUCTS,
-        icon: ListIcon,
+        icon: List,
       },
       {
         id: 'products-create',
-        label: 'Create New',
-        path: `${ROUTES.PRODUCTS}/create`,
-        icon: AddIcon,
+        label: 'Add Product',
+        path: ROUTES.PRODUCT_CREATE,
+        icon: Plus,
       },
     ],
+  },
+  {
+    id: 'categories',
+    label: 'Categories',
+    path: ROUTES.CATEGORIES,
+    icon: FolderOpen,
+    children: [
+      {
+        id: 'categories-list',
+        label: 'All Categories',
+        path: ROUTES.CATEGORIES,
+        icon: List,
+      },
+      {
+        id: 'categories-create',
+        label: 'Add Category',
+        path: ROUTES.CATEGORY_CREATE,
+        icon: Plus,
+      },
+    ],
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    path: ROUTES.ANALYTICS,
+    icon: BarChart3,
   },
   {
     id: 'settings',
     label: 'Settings',
     path: ROUTES.SETTINGS,
-    icon: SettingsIcon,
+    icon: Settings,
   },
 ];
 
 const Sidebar: React.FC = () => {
   useSignals();
-  const theme = useTheme();
-  const navigate = useNavigate();
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = React.useState<string[]>(['categories', 'products']);
-
-  const handleItemClick = (item: NavigationItem) => {
-    if (item.children) {
-      // Toggle expansion for parent items
-      setExpandedItems(prev => 
-        prev.includes(item.id) 
-          ? prev.filter(id => id !== item.id)
-          : [...prev, item.id]
-      );
-    } else {
-      // Navigate to the route
-      navigate(item.path);
-      setCurrentPage(item.id);
-    }
-  };
+  const [expandedItems, setExpandedItems] = React.useState<string[]>(['products', 'categories']);
 
   const isItemActive = (path: string) => {
-    return location.pathname === path;
+    if (path === ROUTES.DASHBOARD) {
+      return location.pathname === '/' || location.pathname === ROUTES.DASHBOARD;
+    }
+    return location.pathname.startsWith(path);
   };
 
   const isParentActive = (item: NavigationItem) => {
@@ -124,6 +104,14 @@ const Sidebar: React.FC = () => {
     return isItemActive(item.path);
   };
 
+  const toggleExpanded = (itemId: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
   const renderNavigationItem = (item: NavigationItem, level = 0) => {
     const isExpanded = expandedItems.includes(item.id);
     const isActive = isItemActive(item.path);
@@ -131,151 +119,152 @@ const Sidebar: React.FC = () => {
     const IconComponent = item.icon;
 
     return (
-      <React.Fragment key={item.id}>
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => handleItemClick(item)}
-            sx={{
-              pl: 2 + level * 2,
-              pr: 2,
-              py: 1.5,
-              mx: 1,
-              mb: 0.5,
-              borderRadius: 2,
-              backgroundColor: isActive 
-                ? alpha(theme.palette.primary.main, 0.1)
-                : 'transparent',
-              color: isActive || isParentItemActive
-                ? theme.palette.primary.main
-                : theme.palette.text.primary,
-              '&:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                transform: 'translateX(4px)',
-              },
-              transition: 'all 0.2s ease-in-out',
-              position: 'relative',
-              '&::before': isActive ? {
-                content: '""',
-                position: 'absolute',
-                left: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 3,
-                height: '60%',
-                backgroundColor: theme.palette.primary.main,
-                borderRadius: '0 2px 2px 0',
-              } : {},
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 40,
-                color: 'inherit',
-                '& svg': {
-                  fontSize: '1.3rem',
-                },
-              }}
+      <div key={item.id}>
+        <div
+          className={cn(
+            'group relative flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+            level > 0 && 'ml-4',
+            isActive || isParentItemActive
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          )}
+        >
+          {item.children ? (
+            <button
+              onClick={() => toggleExpanded(item.id)}
+              className="flex w-full items-center"
             >
-              <IconComponent />
-            </ListItemIcon>
-            
-            {sidebarOpen.value && (
-              <>
-                <ListItemText
-                  primary={item.label}
-                  sx={{
-                    '& .MuiListItemText-primary': {
-                      fontSize: '0.9rem',
-                      fontWeight: isActive || isParentItemActive ? 600 : 400,
-                    },
-                  }}
-                />
-                {item.children && (
-                  <Box sx={{ ml: 1 }}>
-                    {isExpanded ? <ExpandLess /> : <ExpandMore />}
-                  </Box>
+              <IconComponent className="mr-3 h-4 w-4 flex-shrink-0" />
+              <AnimatePresence>
+                {sidebarOpen.value && (
+                  <motion.span
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="flex-1 text-left"
+                  >
+                    {item.label}
+                  </motion.span>
                 )}
-              </>
-            )}
-          </ListItemButton>
-        </ListItem>
+              </AnimatePresence>
+              {sidebarOpen.value && (
+                <motion.div
+                  animate={{ rotate: isExpanded ? 90 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </motion.div>
+              )}
+            </button>
+          ) : (
+            <Link to={item.path} className="flex w-full items-center">
+              <IconComponent className="mr-3 h-4 w-4 flex-shrink-0" />
+              <AnimatePresence>
+                {sidebarOpen.value && (
+                  <motion.span
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="flex-1"
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          )}
+          
+          {/* Active indicator */}
+          {(isActive || isParentItemActive) && (
+            <motion.div
+              layoutId="activeIndicator"
+              className="absolute left-0 top-0 h-full w-1 bg-primary-foreground rounded-r-full"
+              initial={false}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
+          )}
+        </div>
 
-        {/* Render children */}
-        {item.children && sidebarOpen.value && (
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              {item.children.map(child => renderNavigationItem(child, level + 1))}
-            </List>
-          </Collapse>
-        )}
-      </React.Fragment>
+        {/* Children */}
+        <AnimatePresence>
+          {item.children && isExpanded && sidebarOpen.value && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="ml-4 space-y-1 border-l border-border pl-4">
+                {item.children.map(child => renderNavigationItem(child, level + 1))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     );
   };
 
   return (
-    <Drawer
-      variant="permanent"
-      open={sidebarOpen.value}
-      sx={{
-        width: sidebarOpen.value ? theme.custom.sidebar.width : theme.custom.sidebar.collapsedWidth,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: sidebarOpen.value ? theme.custom.sidebar.width : theme.custom.sidebar.collapsedWidth,
-          boxSizing: 'border-box',
-          backgroundColor: theme.palette.background.paper,
-          borderRight: `1px solid ${theme.palette.divider}`,
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          overflowX: 'hidden',
-          mt: `${theme.custom.header.height}px`,
-          height: `calc(100vh - ${theme.custom.header.height}px)`,
-        },
-      }}
+    <motion.aside
+      animate={{ width: sidebarOpen.value ? 280 : 80 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed left-0 top-0 z-40 h-screen border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     >
-      <Box sx={{ overflow: 'auto', height: '100%' }}>
-        {/* Navigation Header */}
-        {sidebarOpen.value && (
-          <Box sx={{ p: 2, pb: 1 }}>
-            <Typography
-              variant="overline"
-              sx={{
-                color: theme.palette.text.secondary,
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                letterSpacing: 1,
-              }}
+      <div className="flex h-full flex-col">
+        {/* Header */}
+        <div className="flex h-16 items-center justify-between px-4 border-b border-border">
+          <AnimatePresence>
+            {sidebarOpen.value && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex items-center space-x-2"
+              >
+                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                  <Package className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="font-semibold text-foreground">ProductHub</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <button
+            onClick={toggleSidebar}
+            className="rounded-lg p-2 hover:bg-accent transition-colors"
+          >
+            <motion.div
+              animate={{ rotate: sidebarOpen.value ? 0 : 180 }}
+              transition={{ duration: 0.2 }}
             >
-              Navigation
-            </Typography>
-          </Box>
-        )}
+              <ChevronLeft className="h-4 w-4" />
+            </motion.div>
+          </button>
+        </div>
 
-        {/* Navigation Items */}
-        <List sx={{ pt: 0 }}>
+        {/* Navigation */}
+        <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
           {navigationItems.map(item => renderNavigationItem(item))}
-        </List>
-
-        <Divider sx={{ my: 2, mx: 2 }} />
+        </nav>
 
         {/* Footer */}
-        {sidebarOpen.value && (
-          <Box sx={{ p: 2, mt: 'auto' }}>
-            <Typography
-              variant="caption"
-              sx={{
-                color: theme.palette.text.secondary,
-                display: 'block',
-                textAlign: 'center',
-              }}
-            >
-              Product Manager v1.0
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    </Drawer>
+        <div className="border-t border-border p-4">
+          <AnimatePresence>
+            {sidebarOpen.value && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-xs text-muted-foreground text-center"
+              >
+                ProductHub v1.0.0
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.aside>
   );
 };
 
